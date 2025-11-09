@@ -1,0 +1,147 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Stock Data Intelligence — Dashboard</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 0; display:flex; height:100vh; }
+    #sidebar { width:250px; border-right:1px solid #ddd; padding:10px; overflow:auto; box-sizing:border-box; }
+    #main { flex:1; padding:12px; box-sizing:border-box; }
+    .company { padding:8px; cursor:pointer; border-bottom:1px solid #f0f0f0; }
+    .company:hover { background:#f8f8f8; }
+    #controls { margin-bottom:10px; }
+    #chart-holder { width:100%; height:70vh; }
+    input[type="text"] { width:100%; margin-bottom:6px; padding:6px; box-sizing:border-box; }
+    button { padding:6px 10px; }
+    pre { background:#f6f6f6; padding:10px; border-radius:4px; max-height:120px; overflow:auto; }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div id="sidebar">
+    <h3>Companies</h3>
+    <div id="companies">Loading...</div>
+    <hr>
+    <h4>Compare</h4>
+    <input id="sym1" placeholder="Symbol 1 (e.g. INFY.NS)" />
+    <input id="sym2" placeholder="Symbol 2 (e.g. TCS.NS)" />
+    <button id="btnCompare">Compare 90d</button>
+  </div>
+  <div id="main">
+    <div id="controls">
+      <select id="days">
+        <option value="30">Last 30 days</option>
+        <option value="90">Last 90 days</option>
+        <option value="180">Last 180 days</option>
+      </select>
+      <button id="refresh">Refresh Data</button>
+    </div>
+    <h2 id="title">Pick a company</h2>
+    <canvas id="chart"></canvas>
+    <pre id="meta"></pre>
+  </div>
+
+<script>
+async function fetchJSON(url){
+  const res = await fetch(url);
+  if (!res.ok) {
+    const txt = await res.text();
+    throw new Error(`${res.status} ${res.statusText} - ${txt}`);
+  }
+  return res.json();
+}
+
+async function loadCompanies(){
+  try {
+    const data = await fetchJSON('/companies');
+    const container = document.getElementById('companies');
+    container.innerHTML = '';
+    if (!data.companies || data.companies.length === 0) {
+      container.textContent = "No companies found. Run data_fetch.py to populate data/";
+      return;
+    }
+    data.companies.forEach(s => {
+      const el = document.createElement('div');
+      el.className = 'company';
+      el.textContent = s;
+      el.onclick = () => showCompany(s);
+      container.appendChild(el);
+    });
+  } catch (err) {
+    document.getElementById('companies').textContent = 'Error loading companies: ' + err.message;
+  }
+}
+
+let chart;
+function initChart(){
+  const ctx = document.getElementById('chart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: [], datasets: [] },
+    options: { responsive:true, plugins: { legend: { display: true } } }
+  });
+}
+
+async function showCompany(symbol){
+  const days = document.getElementById('days').value;
+  try {
+    const res = await fetchJSON(`/data/${symbol}?days=${days}`);
+    const rows = res.rows;
+    if(!rows || rows.length===0) {
+      alert('No data for ' + symbol);
+      return;
+    }
+    const labels = rows.map(r => r.date);
+    const closes = rows.map(r => r.close);
+    const ma7 = rows.map(r => r.ma7);
+    chart.data.labels = labels;
+    chart.data.datasets = [
+      { label: symbol + " close", data: closes, fill:false },
+      { label: "MA7", data: ma7, fill:false, borderDash:[5,5] }
+    ];
+    chart.update();
+    document.getElementById('title').textContent = symbol + " — Last " + days + " days";
+    // meta
+    const last = rows[rows.length-1];
+    document.getElementById('meta').textContent = JSON.stringify({
+      date: last.date,
+      close: last.close,
+      daily_return: last.daily_return,
+      vol30_ann: last.vol30_ann,
+      '52w_high': last["52w_high"],
+      '52w_low': last["52w_low"]
+    }, null, 2);
+  } catch (err) {
+    alert('Error: ' + err.message);
+  }
+}
+
+document.getElementById('btnCompare').onclick = async () => {
+  const s1 = document.getElementById('sym1').value.trim();
+  const s2 = document.getElementById('sym2').value.trim();
+  if(!s1 || !s2) return alert('Provide both symbols');
+  try {
+    const res = await fetchJSON(`/compare?symbol1=${encodeURIComponent(s1)}&symbol2=${encodeURIComponent(s2)}&days=90`);
+    const rows = res.rows;
+    chart.data.labels = rows.map(r => r.date);
+    chart.data.datasets = [
+      { label: s1, data: rows.map(r => r['norm_' + s1]), fill:false },
+      { label: s2, data: rows.map(r => r['norm_' + s2]), fill:false }
+    ];
+    chart.update();
+    document.getElementById('title').textContent = `${s1} vs ${s2} (Normalized)`;
+    document.getElementById('meta').textContent = '';
+  } catch (err) {
+    alert('Compare error: ' + err.message);
+  }
+};
+
+document.getElementById('refresh').onclick = () => location.reload();
+
+window.onload = async () => {
+  initChart();
+  await loadCompanies();
+};
+</script>
+</body>
+</html>
