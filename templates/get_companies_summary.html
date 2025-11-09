@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NSE Yearly Stock Summary</title>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      font-family: "Poppins", sans-serif;
+      background: linear-gradient(135deg, #e3f2fd, #f9fbfd);
+      color: #0d47a1;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    h2 {
+      margin-top: 40px;
+      font-size: 2rem;
+      color: #0d47a1;
+      text-shadow: 0 0 8px #bbdefb;
+    }
+
+    .summary-container {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+      margin: 30px 0;
+      width: 90%;
+      max-width: 900px;
+    }
+
+    .summary-card {
+      background: #ffffff;
+      border: 1px solid #bbdefb;
+      border-radius: 16px;
+      box-shadow: 0 4px 12px rgba(13, 71, 161, 0.1);
+      padding: 25px 30px;
+      text-align: center;
+      flex: 1 1 250px;
+      transition: transform 0.3s;
+    }
+
+    .summary-card:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 18px rgba(13, 71, 161, 0.2);
+    }
+
+    .summary-card h3 {
+      color: #1565c0;
+      margin-bottom: 8px;
+    }
+
+    .summary-card p {
+      font-size: 1.4rem;
+      font-weight: bold;
+      color: #0d47a1;
+    }
+
+    .chart-container {
+      background: #ffffff;
+      border-radius: 16px;
+      box-shadow: 0 8px 25px rgba(13, 71, 161, 0.1);
+      padding: 20px;
+      margin: 20px;
+      width: 90%;
+      max-width: 1000px;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 400px !important;
+    }
+  </style>
+</head>
+
+<body>
+  <h2>📊 Yearly Stock Summary (NSE)</h2>
+
+  <div class="summary-container">
+    <div class="summary-card">
+      <h3>52-Week High</h3>
+      <p id="highValue">₹---</p>
+    </div>
+    <div class="summary-card">
+      <h3>52-Week Low</h3>
+      <p id="lowValue">₹---</p>
+    </div>
+    <div class="summary-card">
+      <h3>Average Close</h3>
+      <p id="avgClose">₹---</p>
+    </div>
+    <div class="summary-card">
+      <h3>Yearly Return</h3>
+      <p id="returnValue">---</p>
+    </div>
+  </div>
+
+  <div class="chart-container">
+    <h3>Closing Price Trend (Past 12 Months)</h3>
+    <canvas id="yearlyChart"></canvas>
+  </div>
+
+  <script>
+    // Example yearly data (replace with your real data)
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    const closingPrices = [520, 530, 540, 550, 560, 570, 580, 595, 590, 600, 610, 625];
+
+    // Calculate stats
+    const high52 = Math.max(...closingPrices);
+    const low52 = Math.min(...closingPrices);
+    const avgClose = (closingPrices.reduce((a, b) => a + b, 0) / closingPrices.length).toFixed(2);
+    const yearlyReturn = (((closingPrices[closingPrices.length - 1] - closingPrices[0]) / closingPrices[0]) * 100).toFixed(2);
+
+    // Update summary cards
+    document.getElementById("highValue").innerText = "₹" + high52;
+    document.getElementById("lowValue").innerText = "₹" + low52;
+    document.getElementById("avgClose").innerText = "₹" + avgClose;
+    document.getElementById("returnValue").innerText = yearlyReturn + "%";
+
+    // Create Chart.js line chart
+    new Chart(document.getElementById("yearlyChart"), {
+      type: "line",
+      data: {
+        labels: months,
+        datasets: [{
+          label: "Closing Price (₹)",
+          data: closingPrices,
+          borderColor: "#1565c0",
+          backgroundColor: "rgba(21,101,192,0.2)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+        },
+        scales: {
+          y: { beginAtZero: false }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

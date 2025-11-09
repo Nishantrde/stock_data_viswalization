@@ -3,13 +3,16 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NSE Companies</title>
+  <title>NSE Stock Analysis</title>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body {
       font-family: "Poppins", sans-serif;
       background: linear-gradient(135deg, #e3f2fd, #f9fbfd);
-      color: #1a237e;
+      color: #0d47a1;
       margin: 0;
       padding: 0;
       display: flex;
@@ -20,106 +23,174 @@
 
     h2 {
       margin-top: 40px;
-      color: #0d47a1;
       font-size: 2rem;
-      letter-spacing: 1px;
-      text-shadow: 0 0 5px #bbdefb;
+      color: #0d47a1;
+      text-shadow: 0 0 8px #bbdefb;
     }
 
-    /* Search Bar */
-    .search-container {
-      margin-top: 20px;
-      width: 80%;
-      max-width: 500px;
-      display: flex;
-      justify-content: center;
-    }
-
-    #searchInput {
-      width: 100%;
-      padding: 12px 18px;
-      border: 1px solid #90caf9;
-      border-radius: 30px;
-      font-size: 1rem;
-      outline: none;
-      box-shadow: 0 0 8px rgba(13, 71, 161, 0.1);
-      transition: 0.3s;
-    }
-
-    #searchInput:focus {
-      border-color: #0d47a1;
-      box-shadow: 0 0 12px rgba(13, 71, 161, 0.3);
-    }
-
-    /* Grid Layout */
-    .grid-container {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-      gap: 15px;
-      width: 90%;
-      max-width: 1000px;
-      margin: 40px auto;
-      padding: 25px;
-      background: white;
+    .chart-container {
+      background: #ffffff;
       border-radius: 16px;
       box-shadow: 0 8px 25px rgba(13, 71, 161, 0.1);
-      transition: all 0.3s ease;
+      padding: 20px;
+      margin: 20px;
+      width: 90%;
+      max-width: 1000px;
     }
 
-    .grid-item {
-      background: #e3f2fd;
-      border: 1px solid #bbdefb;
-      border-radius: 10px;
-      text-align: center;
-      padding: 15px 5px;
-      font-weight: 500;
-      font-size: 1rem;
-      transition: 0.3s ease;
-      color: #0d47a1;
-    }
-
-    .grid-item:hover {
-      background: #bbdefb;
-      transform: scale(1.05);
-      box-shadow: 0 0 10px rgba(13, 71, 161, 0.3);
-      cursor: pointer;
-    }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .grid-container {
-        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      }
-      h2 {
-        font-size: 1.6rem;
-      }
+    canvas {
+      width: 100% !important;
+      height: 400px !important;
     }
   </style>
 </head>
 
 <body>
-  <h2>📘 NSE Company Symbols</h2>
+  <h2>📊 NSE Stock Data Visualization</h2>
 
-  <div class="search-container">
-    <input type="text" id="searchInput" placeholder="Search company symbol..." onkeyup="filterSymbols()">
+  <div class="chart-container">
+    <h3>Closing Price Trend</h3>
+    <canvas id="closeChart"></canvas>
   </div>
 
-  <div class="grid-container" id="companyGrid">
-    {% for symbol in nse_symbol %}
-      <div class="grid-item">{{ symbol }}</div>
-    {% endfor %}
+  <div class="chart-container">
+    <h3>Daily Return (%)</h3>
+    <canvas id="returnChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>Volatility Score</h3>
+    <canvas id="volChart"></canvas>
+  </div>
+
+  <div class="chart-container">
+    <h3>High, Low & Average Comparison</h3>
+    <canvas id="avgChart"></canvas>
   </div>
 
   <script>
-    function filterSymbols() {
-      const input = document.getElementById("searchInput").value.toLowerCase();
-      const items = document.querySelectorAll(".grid-item");
-      
-      items.forEach(item => {
-        const text = item.textContent.toLowerCase();
-        item.style.display = text.includes(input) ? "block" : "none";
-      });
-    }
+    // Example data (replace these with real values from get_stock_data)
+    const dates = ["2025-10-10", "2025-10-11", "2025-10-12", "2025-10-13", "2025-10-14"];
+    const closingPrices = [560, 570, 565, 580, 575];
+    const dailyReturn = [0.015, -0.008, 0.012, 0.010, -0.009];
+    const volatility = [0.012, 0.013, 0.011, 0.015, 0.014];
+    const avgClose = 570;
+    const avgHigh = 585;
+    const avgLow = 555;
+    const highs = [570, 575, 580, 590, 585];
+    const lows = [550, 555, 560, 565, 560];
+
+    // Closing Price Chart
+    new Chart(document.getElementById("closeChart"), {
+      type: "line",
+      data: {
+        labels: dates,
+        datasets: [{
+          label: "Closing Price (₹)",
+          data: closingPrices,
+          borderColor: "#1565c0",
+          backgroundColor: "rgba(21,101,192,0.2)",
+          fill: true,
+          tension: 0.3,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: { display: true },
+        },
+        scales: {
+          y: { beginAtZero: false },
+        }
+      }
+    });
+
+    // Daily Return Chart
+    new Chart(document.getElementById("returnChart"), {
+      type: "bar",
+      data: {
+        labels: dates,
+        datasets: [{
+          label: "Daily Return",
+          data: dailyReturn.map(x => x * 100),
+          backgroundColor: "#64b5f6",
+          borderColor: "#1e88e5",
+          borderWidth: 1,
+        }]
+      },
+      options: {
+        scales: {
+          y: {
+            title: { display: true, text: "Return (%)" }
+          }
+        }
+      }
+    });
+
+    // Volatility Chart
+    new Chart(document.getElementById("volChart"), {
+      type: "line",
+      data: {
+        labels: dates,
+        datasets: [{
+          label: "Volatility Score",
+          data: volatility,
+          borderColor: "#0277bd",
+          backgroundColor: "rgba(2,119,189,0.2)",
+          fill: true,
+          tension: 0.3
+        }]
+      },
+      options: {
+        plugins: {
+          legend: { display: true }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Volatility" }
+          }
+        }
+      }
+    });
+
+    // High, Low, and Average Chart
+    new Chart(document.getElementById("avgChart"), {
+      type: "bar",
+      data: {
+        labels: dates,
+        datasets: [
+          {
+            label: "High",
+            data: highs,
+            backgroundColor: "#42a5f5"
+          },
+          {
+            label: "Low",
+            data: lows,
+            backgroundColor: "#90caf9"
+          },
+          {
+            label: "Average Close",
+            data: Array(dates.length).fill(avgClose),
+            type: "line",
+            borderColor: "#0d47a1",
+            borderWidth: 2,
+            fill: false,
+            pointRadius: 0
+          }
+        ]
+      },
+      options: {
+        plugins: {
+          legend: { display: true }
+        },
+        scales: {
+          y: { beginAtZero: false }
+        }
+      }
+    });
   </script>
 </body>
 </html>
