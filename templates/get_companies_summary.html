@@ -1,62 +1,118 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>NSE Yearly Stock Summary</title>
-
-  <!-- Chart.js CDN -->
+  <meta charset="UTF-8">
+  <title>{{ stock_data.symbol }} - 12 Month Summary</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     body {
-      font-family: "Poppins", sans-serif;
-      background: linear-gradient(135deg, #e3f2fd, #f9fbfd);
-      color: #0d47a1;
       margin: 0;
-      padding: 0;
+      font-family: "Poppins", sans-serif;
+      background: #f4f9ff;
       display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
+      height: 100vh;
     }
 
-    h2 {
-      margin-top: 40px;
-      font-size: 2rem;
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: #e3f2fd;
       color: #0d47a1;
-      text-shadow: 0 0 8px #bbdefb;
+      padding: 20px;
+      overflow-y: auto;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.1);
+    }
+
+    .sidebar h2 {
+      font-size: 1.3rem;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .search-box {
+      background: #fff;
+      border-radius: 20px;
+      padding: 5px 10px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .search-box input {
+      border: none;
+      outline: none;
+      flex: 1;
+      padding: 5px;
+      font-size: 0.9rem;
+    }
+
+    .company-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: calc(100vh - 150px);
+      overflow-y: auto;
+    }
+
+    .company-list li {
+      margin: 6px 0;
+      background: white;
+      border-radius: 12px;
+      padding: 8px 12px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .company-list li:hover {
+      background: #bbdefb;
+      transform: scale(1.03);
+    }
+
+    .company-list a {
+      text-decoration: none;
+      color: #0d47a1;
+      font-weight: 500;
+      display: block;
+    }
+
+    /* Main content */
+    .content {
+      flex: 1;
+      padding: 30px;
+      overflow-y: auto;
+    }
+
+    h1 {
+      color: #0d47a1;
+      margin-bottom: 20px;
     }
 
     .summary-container {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
       gap: 20px;
-      margin: 30px 0;
-      width: 90%;
-      max-width: 900px;
+      margin-bottom: 30px;
     }
 
     .summary-card {
-      background: #ffffff;
-      border: 1px solid #bbdefb;
+      background: white;
+      flex: 1 1 220px;
+      padding: 20px;
       border-radius: 16px;
       box-shadow: 0 4px 12px rgba(13, 71, 161, 0.1);
-      padding: 25px 30px;
       text-align: center;
-      flex: 1 1 250px;
-      transition: transform 0.3s;
+      transition: 0.3s;
     }
 
     .summary-card:hover {
       transform: scale(1.05);
-      box-shadow: 0 6px 18px rgba(13, 71, 161, 0.2);
+      box-shadow: 0 6px 16px rgba(13, 71, 161, 0.2);
     }
 
     .summary-card h3 {
       color: #1565c0;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
     }
 
     .summary-card p {
@@ -66,13 +122,10 @@
     }
 
     .chart-container {
-      background: #ffffff;
+      background: white;
       border-radius: 16px;
       box-shadow: 0 8px 25px rgba(13, 71, 161, 0.1);
       padding: 20px;
-      margin: 20px;
-      width: 90%;
-      max-width: 1000px;
     }
 
     canvas {
@@ -83,57 +136,89 @@
 </head>
 
 <body>
-  <h2>📊 Yearly Stock Summary (NSE)</h2>
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <h2>📘 NSE Companies</h2>
+    <div class="search-box">
+      <input type="text" id="search" placeholder="Search company...">
+    </div>
 
-  <div class="summary-container">
-    <div class="summary-card">
-      <h3>52-Week High</h3>
-      <p id="highValue">₹---</p>
-    </div>
-    <div class="summary-card">
-      <h3>52-Week Low</h3>
-      <p id="lowValue">₹---</p>
-    </div>
-    <div class="summary-card">
-      <h3>Average Close</h3>
-      <p id="avgClose">₹---</p>
-    </div>
-    <div class="summary-card">
-      <h3>Yearly Return</h3>
-      <p id="returnValue">---</p>
-    </div>
+    <ul class="company-list" id="companyList">
+      {% for company in symbols %}
+      <li><a href="{{ url_for('get_companies_summary', symbol=company) }}">{{ company }}</a></li>
+
+      {% endfor %}
+    </ul>
   </div>
 
-  <div class="chart-container">
-    <h3>Closing Price Trend (Past 12 Months)</h3>
-    <canvas id="yearlyChart"></canvas>
+  <!-- Main Content -->
+  <div class="content">
+    <h1>{{ stock_data.symbol }} - Last 12 Months Summary</h1>
+
+    <div class="summary-container">
+      <div class="summary-card">
+        <h3>52-Week High</h3>
+        <p>₹{{ stock_data.high_52 }}</p>
+      </div>
+      <div class="summary-card">
+        <h3>52-Week Low</h3>
+        <p>₹{{ stock_data.low_52 }}</p>
+      </div>
+      <div class="summary-card">
+        <h3>Average Close</h3>
+        <p>₹{{ stock_data.avg_close }}</p>
+      </div>
+      <div class="summary-card">
+        <h3>Yearly Return</h3>
+        <p>{{ stock_data.yearly_return }}%</p>
+      </div>
+    </div>
+
+    <div class="chart-container">
+      <h3>Closing Price Trend (Last 12 Months)</h3>
+      <canvas id="yearlyChart"></canvas>
+    </div>
   </div>
 
   <script>
-    // Example yearly data (replace with your real data)
-    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-    const closingPrices = [520, 530, 540, 550, 560, 570, 580, 595, 590, 600, 610, 625];
+    // Sidebar search
+    const searchInput = document.getElementById('search');
+    const listItems = document.querySelectorAll('#companyList li');
+    searchInput.addEventListener('input', function() {
+      const filter = this.value.toLowerCase();
+      listItems.forEach(li => {
+        const text = li.textContent.toLowerCase();
+        li.style.display = text.includes(filter) ? "" : "none";
+      });
+    });
 
-    // Calculate stats
-    const high52 = Math.max(...closingPrices);
-    const low52 = Math.min(...closingPrices);
-    const avgClose = (closingPrices.reduce((a, b) => a + b, 0) / closingPrices.length).toFixed(2);
-    const yearlyReturn = (((closingPrices[closingPrices.length - 1] - closingPrices[0]) / closingPrices[0]) * 100).toFixed(2);
+    // Get stock data from Flask
+    const labels = {{ stock_data.months|default([])|tojson }};
+    const prices = {{ stock_data.prices|default([])|tojson }};
 
-    // Update summary cards
-    document.getElementById("highValue").innerText = "₹" + high52;
-    document.getElementById("lowValue").innerText = "₹" + low52;
-    document.getElementById("avgClose").innerText = "₹" + avgClose;
-    document.getElementById("returnValue").innerText = yearlyReturn + "%";
+    // If no months provided, generate last 12 month names dynamically
+    function getLast12Months() {
+      const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+      const now = new Date();
+      const result = [];
+      for (let i = 11; i >= 0; i--) {
+        let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        result.push(months[d.getMonth()] + " " + d.getFullYear().toString().slice(-2));
+      }
+      return result;
+    }
+
+    const chartLabels = labels.length ? labels : getLast12Months();
+    const chartPrices = prices.length ? prices : [120, 135, 128, 150, 145, 155, 160, 158, 162, 170, 180, 190];
 
     // Create Chart.js line chart
     new Chart(document.getElementById("yearlyChart"), {
       type: "line",
       data: {
-        labels: months,
+        labels: chartLabels,
         datasets: [{
-          label: "Closing Price (₹)",
-          data: closingPrices,
+          label: labels.length ? "Closing Price (₹)" : "Demo Price Trend (₹)",
+          data: chartPrices,
           borderColor: "#1565c0",
           backgroundColor: "rgba(21,101,192,0.2)",
           fill: true,
@@ -145,9 +230,14 @@
         responsive: true,
         plugins: {
           legend: { display: true },
+          title: {
+            display: !labels.length,
+            text: "Demo Data (No real data available)"
+          }
         },
         scales: {
-          y: { beginAtZero: false }
+          y: { beginAtZero: false },
+          x: { ticks: { maxTicksLimit: 12 } }
         }
       }
     });

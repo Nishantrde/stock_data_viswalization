@@ -20,7 +20,7 @@ def index():
     return render_template('index.html', posts=posts)
 
 @app.route('/companies', methods=['GET'])
-def get_companies_name():
+def get_companies():
 
     data = get_companies_name()
 
@@ -29,12 +29,21 @@ def get_companies_name():
 @app.route('/data/<symbol>')
 def get_companies_data(symbol):
 
+    companies = get_companies_name()
     data = get_stock_data(symbol)
 
-    return render_template("get_companies_data.html", stock_data = data)
+    return render_template("get_companies_data.html", stock_data = data, symbols = companies)
 
 @app.route('/summary/<symbol>')
 def get_companies_summary(symbol):
+
+    companies = get_companies_name()
+    data = get_stock_data(symbol, days=364)
+
+    return render_template("get_companies_summary.html", stock_data=data, symbols=companies)
+    
+@app.route('/compare')
+def get_compare_companies(symbol):
 
     data = get_stock_data(symbol, days = 364)
 
