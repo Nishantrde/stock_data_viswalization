@@ -43,11 +43,30 @@ def get_companies_summary(symbol):
     return render_template("get_companies_summary.html", stock_data=data, symbols=companies)
     
 @app.route('/compare')
-def get_compare_companies(symbol):
+def get_compare_companies():
 
-    data = get_stock_data(symbol, days = 364)
+    # http://127.0.0.1:5000/compare?symbol1=RELIANCE&symbol2=TCS
 
-    return render_template("get_companies_summary.html", stock_data = data)
+    
+    sym1 = request.args.get("symbol1")
+    sym2 = request.args.get("symbol2")
+    print(sym1, sym2)
+
+    sym1_data_month = get_stock_data(sym1)
+    sym1_data_yr = get_stock_data(sym1)
+
+    sym2_data_month = get_stock_data(sym2)
+    sym2_data_yr = get_stock_data(sym2, days=364)
+
+
+
+    return render_template("comapre_companies_summary.html", 
+        sym1=sym1,
+        sym2=sym2,
+        sym1_data_month=sym1_data_month,
+        sym2_data_month=sym2_data_month,
+        sym1_data_yr=sym1_data_yr,
+        sym2_data_yr=sym2_data_yr)
 
 
 
