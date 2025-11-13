@@ -70,13 +70,5 @@ def get_compare_companies():
 
 
 
-# @app.route('/summary/<symbol>')
-# def get_summary_data(symbol):
-    
-#     symbol1 = request.args.get('symbol1')
-#     symbol2 = request.args.get('symbol2')
-
-#     return render_template("get_summary_data.html")
-
 
 
